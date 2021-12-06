@@ -1,0 +1,21 @@
+#!/bin/sh
+
+tag=quay.io/lis/periment
+instance="${1:-q6temveyoz}"
+
+set -eux
+
+sed -e "s,@INSTANCE@,$instance," -e "s,@IMAGE@,$tag," cockpit-cloud.yml.in > cockpit-cloud-${instance}.yml
+
+test -d ephemeral-keys || ./make-keys
+container/build --tag "${tag}" .
+flatpak-spawn --host podman push "${tag}"
+oc delete -f "cockpit-cloud-${instance}.yml" || true
+oc create -f "cockpit-cloud-${instance}.yml"
+
+cat >connect <<EOF
+#!/bin/sh
+
+./client --key client.key --cert client.crt --peer-cert server.crt cockpit-cloud-session-$instance-front-door-ci.apps.ocp-c1.prod.psi.redhat.com
+EOF
+chmod +x connect

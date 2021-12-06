@@ -1,0 +1,54 @@
+#!/usr/bin/python3
+
+import argparse
+import socket
+import ssl
+import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--key', metavar='FILENAME', help='Filename of our private key')
+parser.add_argument('--cert', metavar='FILENAME', help='Filename of our certificate')
+parser.add_argument('--peer-cert', metavar='FILENAME', help='Filename of the peer certificate')
+
+if 'client' in sys.argv[0]:
+    parser.add_argument('server', help='Server to connect to')
+    parser.add_argument('port', type=int, nargs='?', default=443, help='port to connect to')
+    protocol = ssl.PROTOCOL_TLS_CLIENT
+else:
+    parser.add_argument('port', type=int, default=443, help='port to listen on')
+    protocol = ssl.PROTOCOL_TLS_SERVER
+
+args = parser.parse_args()
+
+context = ssl.SSLContext(protocol=protocol)
+context.load_cert_chain(args.cert, args.key)
+context.load_verify_locations(args.peer_cert)
+context.verify_mode = ssl.CERT_REQUIRED
+
+if protocol == ssl.PROTOCOL_TLS_SERVER:
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listener.bind(('', args.port))
+    listener.listen()
+
+    print(f'listening on {args.port}', file=sys.stderr)
+
+    tls_listener = context.wrap_socket(listener, server_side=True)
+
+    while True:
+        try:
+            connection, address = tls_listener.accept()
+            print(address, file=sys.stderr)
+            connection.write(b'Some stuff server')
+            print(connection.read())
+            connection.close()
+        except ssl.SSLError:
+            continue
+
+else:
+    connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+    connection.connect((args.server, args.port))
+    tls_connection = context.wrap_socket(connection, server_hostname=args.server)
+    tls_connection.write(b'Some client stuff')
+    print(tls_connection.read())
+    tls_connection.close()
