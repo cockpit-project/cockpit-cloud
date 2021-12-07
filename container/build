@@ -4,6 +4,7 @@ if test -d container; then
     cd container
 fi
 
+cp -v ../src/cockpit-cloud-connector .
 cp -v ../ephemeral-keys/server.{crt,key} .
 cp -v ../ephemeral-keys/client.crt .
 chmod a+r server.{crt,key} client.crt

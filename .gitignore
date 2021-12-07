@@ -1,3 +1,4 @@
 /cockpit-cloud-*.yml
-/connect
+/client
+/client.tar.xz
 /ephemeral-keys

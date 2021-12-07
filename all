@@ -5,17 +5,43 @@ instance="${1:-q6temveyoz}"
 
 set -eux
 
+for yml in cockpit-cloud-*.yml; do
+    oc delete -f $yml
+    rm $yml
+done
+
 sed -e "s,@INSTANCE@,$instance," -e "s,@IMAGE@,$tag," cockpit-cloud.yml.in > cockpit-cloud-${instance}.yml
 
 test -d ephemeral-keys || ./make-keys
+make -C src
 container/build --tag "${tag}" .
 flatpak-spawn --host podman push "${tag}"
-oc delete -f "cockpit-cloud-${instance}.yml" || true
 oc create -f "cockpit-cloud-${instance}.yml"
 
-cat >connect <<EOF
+cat > client/start <<EOF
 #!/bin/sh
 
-./client --key client.key --cert client.crt --peer-cert server.crt cockpit-cloud-session-$instance-front-door-ci.apps.ocp-c1.prod.psi.redhat.com
+if test -d client; then
+    cd client
+fi
+
+export G_MESSAGES_DEBUG=cockpit-cloud-connector
+
+./cockpit-cloud-connector \\
+    --key client.key \\
+    --cert client.crt \\
+    --peer-cert server.crt \\
+    client \\
+    --host cockpit-cloud-session-$instance-front-door-ci.apps.ocp-c1.prod.psi.redhat.com \\
+    /usr/libexec/cockpit-session
 EOF
-chmod +x connect
+chmod +x client/start
+
+tar cJvfh client.tar.xz client
+
+set +x
+echo
+echo "  https://cockpit-cloud-$instance-front-door-ci.apps.ocp-c1.prod.psi.redhat.com/"
+echo
+echo "  ssh c tar xJv < client.tar.xz"
+echo "  ssh c client/start"
