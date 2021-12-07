@@ -1,0 +1,48 @@
+#!/bin/sh
+
+root="apps.ocp-c1.prod.psi.redhat.com"
+project="front-door-ci"
+instance="${1:-q6temveyoz}"
+
+set -eu
+
+yml="cockpit-cloud-${instance}.yml"
+
+test ! -e "${yml}"
+
+# container/build quay.io/lis/cockpit-cloud
+
+if ! test -d ephemeral-keys; then
+    echo "  GEN      ephemeral-keys"
+    ./make-keys "$root"
+fi
+
+make -C src
+
+echo "  GEN      ${yml}"
+sed \
+    -e "s,@PROJECT@,$project," \
+    -e "s,@INSTANCE@,$instance," \
+    -e "s,@SERVER_KEY@,$(base64 -w0 ephemeral-keys/server.key)," \
+    -e "s,@SERVER_CRT@,$(base64 -w0 ephemeral-keys/server.crt)," \
+    -e "s,@CLIENT_CRT@,$(base64 -w0 ephemeral-keys/client.crt)," \
+    cockpit-cloud.yml.in > "${yml}"
+
+echo "  CREATE   ${yml}"
+oc create -f "${yml}"
+
+echo "  GEN      client/start"
+sed \
+    -e "s,@ROOT@,$root," \
+    -e "s,@PROJECT@,$project," \
+    -e "s,@INSTANCE@,$instance," \
+    start.in > client/start
+chmod +x client/start
+echo "  TAR      client.tar.xz"
+tar cJvfh client.tar.xz client
+
+echo
+echo "  https://cockpit-cloud-${instance}-${project}.${root}/"
+echo
+echo "  ssh c tar xJv < client.tar.xz"
+echo "  ssh c client/start"

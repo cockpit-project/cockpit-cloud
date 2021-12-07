@@ -6,5 +6,5 @@ rm -rf ephemeral-keys
 mkdir ephemeral-keys
 cd ephemeral-keys
 
-openssl req -x509 -newkey ed25519 -keyout server.key -out server.crt -days 395 -nodes -subj='/CN=*.apps.ocp-c1.prod.psi.redhat.com'
+openssl req -x509 -newkey ed25519 -keyout server.key -out server.crt -days 395 -nodes -subj="/CN=*.$1"
 openssl req -x509 -newkey ed25519 -keyout client.key -out client.crt -days 395 -nodes -subj='/CN=rhel-server'

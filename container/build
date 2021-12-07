@@ -1,13 +1,14 @@
 #!/bin/sh
 
+set -eux
+
+tag="${1-}"
+
 if test -d container; then
     cd container
 fi
 
 cp -v ../src/cockpit-cloud-connector .
-cp -v ../ephemeral-keys/server.{crt,key} .
-cp -v ../ephemeral-keys/client.crt .
-chmod a+r server.{crt,key} client.crt
 
 if command -v podman; then
     podman="podman"
@@ -15,4 +16,9 @@ elif command -v flatpak-spawn; then
     podman="flatpak-spawn --host podman"
 fi
 
-$podman build "$@"
+if test -n "$tag"; then
+    $podman build --tag "${tag}" .
+    $podman push "${tag}"
+else
+    $podman build .
+fi

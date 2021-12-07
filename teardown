@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -eu
+
+for yml in cockpit-cloud-*.yml; do
+    if test -f "${yml}"; then
+        echo "  DELETE   ${yml}"
+        oc delete -f $yml || true
+        rm $yml
+    fi
+done

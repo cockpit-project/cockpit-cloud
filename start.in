@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if test -d client; then
+    cd client
+fi
+
+export G_MESSAGES_DEBUG=cockpit-cloud-connector
+
+./cockpit-cloud-connector \
+    --key client.key \
+    --cert client.crt \
+    --peer-cert server.crt \
+    client \
+    --host cockpit-cloud-session-@INSTANCE@-@PROJECT@.@ROOT@ \
+    /usr/libexec/cockpit-session
