@@ -17,8 +17,6 @@ if ! test -d ephemeral-keys; then
     ./make-keys "$root"
 fi
 
-make -C src
-
 echo "  GEN      ${yml}"
 sed \
     -e "s,@PROJECT@,$project," \

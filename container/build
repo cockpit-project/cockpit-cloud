@@ -8,8 +8,6 @@ if test -d container; then
     cd container
 fi
 
-cp -v ../src/cockpit-cloud-connector .
-
 if command -v podman; then
     podman="podman"
 elif command -v flatpak-spawn; then
