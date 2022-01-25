@@ -1,9 +1,9 @@
-FROM registry.fedoraproject.org/fedora:35 as builder
+FROM registry.fedoraproject.org/fedora:latest as builder
 RUN dnf install --setopt=install_weak_deps=False -y glib2-devel make gcc
 COPY src /tmp/src
 RUN make -C /tmp/src
 
-FROM registry.fedoraproject.org/fedora:35
+FROM registry.fedoraproject.org/fedora:latest
 RUN dnf install --setopt=install_weak_deps=False -y socat cockpit-ws
 RUN dnf install --setopt=install_weak_deps=False -y strace
 ADD . /container
